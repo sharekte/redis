@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"time"
@@ -126,6 +127,7 @@ type Cmdable interface {
 	HLen(key string) *IntCmd
 	HMGet(key string, fields ...string) *SliceCmd
 	HMSet(key string, fields map[string]interface{}) *StatusCmd
+	HMSet4Struct(key string,fields interface{})*StatusCmd
 	HSet(key, field string, value interface{}) *BoolCmd
 	HSetNX(key, field string, value interface{}) *BoolCmd
 	HVals(key string) *StringSliceCmd
@@ -985,6 +987,28 @@ func (c *cmdable) HMSet(key string, fields map[string]interface{}) *StatusCmd {
 	c.process(cmd)
 	return cmd
 }
+// todo Extend the function HMSet for struct
+// Extend the function HMSet for struct
+// Param fields should be struct to input
+func(c *cmdable)HMSet4Struct(key string,fields interface{})*StatusCmd{
+	m,err:=struct2Map(fields)
+	if err!=nil{
+		return nil
+	}
+	return c.HMSet(key,m)
+}
+
+func struct2Map(s interface{})(map[string]interface{},error){
+	var m=make(map[string]interface{},0)
+	jsonByte,err:=json.Marshal(s)
+	if err!=nil{
+		return nil,err
+	}
+	err=json.Unmarshal(jsonByte,&m)
+	return m,err
+}
+// End
+
 
 func (c *cmdable) HSet(key, field string, value interface{}) *BoolCmd {
 	cmd := NewBoolCmd("hset", key, field, value)
